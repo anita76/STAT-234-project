@@ -262,23 +262,21 @@ class AgentUADQN(AgentBase):
         epistemic_uncertainties = torch.mean((net1-net2)**2,dim=1)/2
         aleatoric_uncertainties = []
         for i in range(self.action_dim):
-            np.sqrt(aleatoric_uncertainties.append(np.cov(net1[i].cpu().data.numpy(), net2[i].cpu().data.numpy())[0][1]))
+            aleatoric_uncertainties.append(np.sqrt(np.cov(net1[i].cpu().data.numpy(), net2[i].cpu().data.numpy())[0][1]))
         aleatoric_uncertainties = torch.tensor(aleatoric_uncertainties, device=self.device)
         action_means = action_means - self.aleatoric_penalty * aleatoric_uncertainties
         samples = torch.distributions.multivariate_normal.MultivariateNormal(action_means,covariance_matrix=torch.diagflat(epistemic_uncertainties)).sample()
         action = samples.argmax().item()
-        if fti > self.turbulence_threshold:
-            action = 0
         return action
 
     def explore_env(self, env, buffer, target_step, reward_scale, gamma) -> int:
         for _ in range(target_step):
-            action = self.select_action(self.state)
+            action = self.select_action(self.state, self.fti)
             next_s, reward, done, next_fti, _ = env.step(action)
 
-            other = (reward * reward_scale, 0.0 if done else gamma, action)  # action is an int
+            other = (reward * reward_scale, 0.0 if done else gamma, self.fti, action)  # action is an int
             buffer.append_buffer(self.state, other)
-            self.state, self.fti = env.reset() if done else next_s
+            self.state, self.fti = env.reset() if done else next_s, next_fti
         return target_step
 
     def update_net(self, buffer, target_step, batch_size, repeat_times) -> (float, float):
