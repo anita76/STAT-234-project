@@ -60,6 +60,7 @@ class StockTradingEnv:
                            price,
                            self.stocks,
                            self.tech_ary[self.day],)).astype(np.float32) * 2 ** -5
+        
         return state, fti
 
     def get_episode_return(self):

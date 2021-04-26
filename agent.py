@@ -179,11 +179,11 @@ class AgentDQN(AgentBase):
     def explore_env(self, env, buffer, target_step, reward_scale, gamma) -> int:
         for _ in range(target_step):
             action = self.select_action(self.state)
-            next_s, reward, done, fti, _ = env.step(action)
+            next_s, reward, done, next_fti, _ = env.step(action)
 
-            other = (reward * reward_scale, 0.0 if done else gamma, action)  # action is an int
+            other = (reward * reward_scale, 0.0 if done else gamma, fti, action)  # action is an int
             buffer.append_buffer(self.state, other)
-            self.state, self.fti = env.reset() if done else next_s
+            self.state, self.fti = env.reset() if done else next_s, next_fti
         return target_step
 
     def update_net(self, buffer, target_step, batch_size, repeat_times) -> (float, float):
@@ -201,7 +201,7 @@ class AgentDQN(AgentBase):
 
     def get_obj_critic_raw(self, buffer, batch_size):
         with torch.no_grad():
-            reward, mask, action, state, next_s = buffer.sample_batch(batch_size)
+            reward, mask, next_fti, action, state, next_s = buffer.sample_batch(batch_size)
             next_q = self.cri_target(next_s).max(dim=1, keepdim=True)[0]
             q_label = reward + mask * next_q
 
@@ -211,7 +211,7 @@ class AgentDQN(AgentBase):
 
     def get_obj_critic_per(self, buffer, batch_size):
         with torch.no_grad():
-            reward, mask, action, state, next_s, is_weights = buffer.sample_batch(batch_size)
+            reward, mask, next_fti, action, state, next_s, is_weights = buffer.sample_batch(batch_size)
             next_q = self.cri_target(next_s).max(dim=1, keepdim=True)[0]
             q_label = reward + mask * next_q
 
@@ -236,6 +236,8 @@ class AgentUADQN(AgentBase):
     def init(self, net_dim, state_dim, action_dim, kappa=1, prior=0.01, aleatoric_penalty=0.5, n_quantiles=20):
         self.action_dim = action_dim
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.n_quantiles = n_quantiles
+        self.aleatoric_penalty = aleatoric_penalty
 
         self.cri = UAQNet(state_dim, action_dim*self.n_quantiles, action_dim*self.n_quantiles, net_dim).to(self.device)
         self.cri_target = deepcopy(self.cri)
@@ -249,8 +251,6 @@ class AgentUADQN(AgentBase):
         self.kappa = kappa
         self.prior = prior
         self.get_obj_critic = self.get_obj_critic_raw
-        self.n_quantiles = n_quantiles
-        self.aleatoric_penalty = aleatoric_penalty
 
     @torch.no_grad()
     def select_action(self, state, fti) -> int:  # for discrete action space
@@ -274,7 +274,7 @@ class AgentUADQN(AgentBase):
     def explore_env(self, env, buffer, target_step, reward_scale, gamma) -> int:
         for _ in range(target_step):
             action = self.select_action(self.state)
-            next_s, reward, done, fti, _ = env.step(action)
+            next_s, reward, done, next_fti, _ = env.step(action)
 
             other = (reward * reward_scale, 0.0 if done else gamma, action)  # action is an int
             buffer.append_buffer(self.state, other)
@@ -296,7 +296,7 @@ class AgentUADQN(AgentBase):
 
     def get_obj_critic_raw(self, buffer, batch_size):
         with torch.no_grad():
-            reward, mask, action, state, next_s = buffer.sample_batch(batch_size)
+            reward, mask, next_fti, action, state, next_s = buffer.sample_batch(batch_size)
             target1,target2 = self.cri_target(next_s)
             target1 = target1.view(batch_size,self.action_dim,self.n_quantiles)
             target2 = target2.view(batch_size,self.action_dim,self.n_quantiles)

@@ -334,7 +334,7 @@ def explore_before_training(env, buffer, target_step, reward_scale, gamma) -> in
     print('start exploring before training')
     while steps < target_step:
         action = rd.randint(action_dim) if if_discrete else rd.uniform(-1, 1, size=action_dim)
-        next_state, reward, done, fti, _ = env.step(action)
+        next_state, reward, done, next_fti, _ = env.step(action)
         steps += 1
 
         scaled_reward = reward * reward_scale
@@ -342,5 +342,5 @@ def explore_before_training(env, buffer, target_step, reward_scale, gamma) -> in
         other = (scaled_reward, mask, fti, action) if if_discrete else (scaled_reward, mask, *action)
         buffer.append_buffer(state, other)
 
-        state, fti = env.reset() if done else next_state
+        state, fti = env.reset() if done else next_state, next_fti
     return steps
