@@ -287,6 +287,9 @@ class StockTradingEnv:
 
         state, fti = self.reset()
         episode_returns = list()  # the cumulative_return / initial_account
+        action_choice = list()
+        print('The initial captial is {}'.format(self.initial_capital))
+        print('The initial number of stocks is {}'.format(self.initial_stocks))
 
         buffer = ReplayBuffer(max_len=1000 + self.max_step, state_dim=state_dim, action_dim=1,
                           if_on_policy=False, if_per=False, if_gpu=True)
@@ -307,6 +310,7 @@ class StockTradingEnv:
             total_asset = self.amount + self.price_ary[self.day] * self.stocks
             episode_return = total_asset / self.initial_total_asset
             episode_returns.append(episode_return)
+            action_choice.append(action)
             if done:
                 break
 

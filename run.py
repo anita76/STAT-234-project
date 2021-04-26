@@ -343,8 +343,8 @@ def explore_before_training(env, buffer, target_step, reward_scale, gamma) -> in
         buffer.append_buffer(state, other)
 
         if done:
-                state, fti = env.reset()
-            else:
-                state = next_state
-                fti = next_fti
+            state, fti = env.reset()
+        else:
+            state = next_state
+            fti = next_fti
     return steps
