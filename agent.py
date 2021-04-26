@@ -85,7 +85,11 @@ class AgentBase:
             next_s, reward, done, next_fti, _ = env.step(action)
             other = (reward * reward_scale, 0.0 if done else gamma, self.fti, *action)
             buffer.append_buffer(self.state, other)
-            self.state, self.fti = env.reset() if done else next_s, next_fti
+            if done:
+                self.state, self.fti = env.reset()
+            else:
+                self.state = next_s
+                self.fti = next_fti
         return target_step
 
     def update_net(self, buffer, target_step, batch_size, repeat_times) -> (float, float):
@@ -184,7 +188,11 @@ class AgentDQN(AgentBase):
 
             other = (reward * reward_scale, 0.0 if done else gamma, self.fti, action)  # action is an int
             buffer.append_buffer(self.state, other)
-            self.state, self.fti = env.reset() if done else next_s, next_fti
+            if done:
+                self.state, self.fti = env.reset()
+            else:
+                self.state = next_s
+                self.fti = next_fti
         return target_step
 
     def update_net(self, buffer, target_step, batch_size, repeat_times) -> (float, float):
@@ -277,7 +285,11 @@ class AgentUADQN(AgentBase):
 
             other = (reward * reward_scale, 0.0 if done else gamma, self.fti, action)  # action is an int
             buffer.append_buffer(self.state, other)
-            self.state, self.fti = env.reset() if done else next_s, next_fti
+            if done:
+                self.state, self.fti = env.reset()
+            else:
+                self.state = next_s
+                self.fti = next_fti
         return target_step
 
     def update_net(self, buffer, target_step, batch_size, repeat_times) -> (float, float):

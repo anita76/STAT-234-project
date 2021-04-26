@@ -342,5 +342,9 @@ def explore_before_training(env, buffer, target_step, reward_scale, gamma) -> in
         other = (scaled_reward, mask, fti, action) if if_discrete else (scaled_reward, mask, fti, *action)
         buffer.append_buffer(state, other)
 
-        state, fti = env.reset() if done else next_state, next_fti
+        if done:
+                state, fti = env.reset()
+            else:
+                state = next_state
+                fti = next_fti
     return steps
