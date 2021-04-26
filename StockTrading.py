@@ -43,6 +43,7 @@ class StockTradingEnv:
     def reset(self):
         self.day = 0
         price = self.price_ary[self.day]
+        fti = self.turbulence_ary[self.day]
 
         if self.if_eval:
             self.stocks = self.initial_stocks
@@ -59,7 +60,7 @@ class StockTradingEnv:
                            price,
                            self.stocks,
                            self.tech_ary[self.day],)).astype(np.float32) * 2 ** -5
-        return state
+        return state, fti
 
     def get_episode_return(self):
         price = self.price_ary[self.day]
@@ -70,6 +71,7 @@ class StockTradingEnv:
 
         self.day += 1
         price = self.price_ary[self.day]
+        fti = self.turbulence_ary[self.day]
 
         if action == 0:
             self.stocks -= 1
@@ -93,7 +95,7 @@ class StockTradingEnv:
             reward = self.gamma_reward
             self.episode_return = total_asset / self.initial_total_asset
 
-        return state, reward, done, dict()
+        return state, reward, done, fti, dict()
 
     def load_data(self, cwd='./', if_eval=None, if_save=False,
                   stock_name='AAPL', tech_indicator_list=None,
@@ -225,7 +227,7 @@ class StockTradingEnv:
         act = agent.act
         device = agent.device
 
-        state = self.reset()
+        state, fti = self.reset()
         episode_returns = list()  # the cumulative_return / initial_account
         action_choice = list()
         print('The initial captial is {}'.format(self.initial_capital))
@@ -233,8 +235,8 @@ class StockTradingEnv:
         with _torch.no_grad():
             for i in range(self.max_step):
                 s_tensor = _torch.as_tensor((state,), device=device)
-                action = agent.get_best_act(s_tensor)
-                state, reward, done, _ = self.step(action)
+                action = agent.get_best_act(s_tensor, fti)
+                state, reward, done, fti, _ = self.step(action)
 
                 total_asset = self.amount + self.price_ary[self.day] * self.stocks
                 episode_return = total_asset / self.initial_total_asset
@@ -248,7 +250,7 @@ class StockTradingEnv:
         plt.grid()
         plt.title('cumulative return over time')
         plt.xlabel('day')
-        plt.ylabel('fraction of initial asset')
+        plt.ylabel('cumulative return as fraction of initial asset')
         plt.savefig(f'{cwd}/cumulative_return.jpg')
 
         plt.figure()
@@ -282,19 +284,20 @@ class StockTradingEnv:
         act = agent.act
         device = agent.device
 
-        state = self.reset()
+        state, fti = self.reset()
         episode_returns = list()  # the cumulative_return / initial_account
 
         buffer = ReplayBuffer(max_len=1000 + self.max_step, state_dim=state_dim, action_dim=1,
                           if_on_policy=False, if_per=False, if_gpu=True)
                           
         for i in range(self.max_step):
-            action = agent.select_action(state)
-            new_state, reward, done, _ = self.step(action)
+            action = agent.select_action(state, fti)
+            new_state, reward, done, new_fti, _ = self.step(action)
 
-            other = (reward * 1, 0.0 if done else self.gamma, action)
+            other = (reward * 1, 0.0 if done else self.gamma, fti, action)
             buffer.append_buffer(state, other)
             state = new_state
+            fti = new_fti
 
             if i%50 == 49: 
                 print('updating network: {}'.format(i))
@@ -309,11 +312,26 @@ class StockTradingEnv:
         import matplotlib.pyplot as plt
         plt.plot(episode_returns)
         plt.grid()
-        plt.title('cumulative return')
+        plt.title('cumulative return over time')
         plt.xlabel('day')
-        plt.xlabel('multiple of initial_account')
-        plt.savefig(f'{cwd}/cumulative_return.jpg')
-        return episode_returns
+        plt.ylabel('cumulative return as fraction of initial asset')
+        plt.savefig(f'{cwd}/cumulative_return_while_learning.jpg')
+
+        plt.figure()
+        plt.plot(self.price_ary)
+        plt.grid()
+        plt.title('stock price over time')
+        plt.xlabel('day')
+        plt.ylabel('price')
+        plt.savefig(f'{cwd}/price_over_time_while_learning.jpg')
+
+        plt.figure()
+        plt.plot(action_choice)
+        plt.grid()
+        plt.title('action choice over time')
+        plt.xlabel('day')
+        plt.ylabel('action')
+        plt.savefig(f'{cwd}/action_over_time_while_learning.jpg')
 
 
 def check_stock_trading_env():
@@ -322,7 +340,7 @@ def check_stock_trading_env():
     env = StockTradingEnv(if_eval=if_eval)
     action_dim = env.action_dim
 
-    state = env.reset()
+    state, fti = env.reset()
     print('state_dim', len(state))
 
     from time import time
@@ -333,7 +351,7 @@ def check_stock_trading_env():
     reward = None
     while not done:
         action = rd.rand(action_dim) * 2 - 1
-        next_state, reward, done, _ = env.step(action)
+        next_state, reward, done, fti, _ = env.step(action)
         # print(';', len(next_state), env.day, reward)
         step += 1
 

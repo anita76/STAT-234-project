@@ -39,6 +39,7 @@ class AgentBase:
         self.soft_update_tau = 2 ** -8  # 5e-3 ~= 2 ** -8
         self.state = None  # set for self.update_buffer(), initialize before training
         self.device = None
+        self.fti = None
 
         self.act = self.act_target = None
         self.cri = self.cri_target = None
@@ -59,7 +60,7 @@ class AgentBase:
         `bool if_per` Prioritized Experience Replay for sparse reward
         """
 
-    def select_action(self, state) -> np.ndarray:
+    def select_action(self, state, fti) -> np.ndarray:
         """Select actions for exploration
 
         :array state: state.shape==(state_dim, )
@@ -80,11 +81,11 @@ class AgentBase:
         :return int target_step: collected target_step number of step in env
         """
         for _ in range(target_step):
-            action = self.select_action(self.state)
-            next_s, reward, done, _ = env.step(action)
+            action = self.select_action(self.state, self.fti)
+            next_s, reward, done, fti, _ = env.step(action)
             other = (reward * reward_scale, 0.0 if done else gamma, *action)
             buffer.append_buffer(self.state, other)
-            self.state = env.reset() if done else next_s
+            self.state, self.fti = env.reset() if done else next_s
         return target_step
 
     def update_net(self, buffer, target_step, batch_size, repeat_times) -> (float, float):
@@ -164,7 +165,7 @@ class AgentDQN(AgentBase):
         else:
             self.get_obj_critic = self.get_obj_critic_raw
 
-    def select_action(self, state) -> int:  # for discrete action space
+    def select_action(self, state, fti) -> int:  # for discrete action space
         if rd.rand() < self.explore_rate:  # epsilon-greedy
             a_int = rd.randint(self.action_dim)  # choosing action randomly
         else:
@@ -178,11 +179,11 @@ class AgentDQN(AgentBase):
     def explore_env(self, env, buffer, target_step, reward_scale, gamma) -> int:
         for _ in range(target_step):
             action = self.select_action(self.state)
-            next_s, reward, done, _ = env.step(action)
+            next_s, reward, done, fti, _ = env.step(action)
 
             other = (reward * reward_scale, 0.0 if done else gamma, action)  # action is an int
             buffer.append_buffer(self.state, other)
-            self.state = env.reset() if done else next_s
+            self.state, self.fti = env.reset() if done else next_s
         return target_step
 
     def update_net(self, buffer, target_step, batch_size, repeat_times) -> (float, float):
@@ -218,20 +219,21 @@ class AgentDQN(AgentBase):
         obj_critic = (self.criterion(q_value, q_label) * is_weights).mean()
         return obj_critic, q_value
     
-    def get_best_act(self, state):
+    def get_best_act(self, state, fti):
         a_tensor = self.act(state)
         a_tensor = a_tensor.argmax(dim=1)
-        return a_tensor.detach().cpu().numpy()[0] 
+        action = a_tensor.detach().cpu().numpy()[0] 
+        if fti > self.turbulence_threshold:
+            action = 0
+        return action 
 
 
 class AgentUADQN(AgentBase):
     def __init__(self):
         super().__init__()
         self.action_dim = None  # chose discrete action randomly in epsilon-greedy
-        self.n_quantiles = 20
-        self.aleatoric_penalty = 0.5
 
-    def init(self, net_dim, state_dim, action_dim, kappa=1, prior=0.01):
+    def init(self, net_dim, state_dim, action_dim, kappa=1, prior=0.01, aleatoric_penalty=0.5, n_quantiles=20):
         self.action_dim = action_dim
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -247,9 +249,11 @@ class AgentUADQN(AgentBase):
         self.kappa = kappa
         self.prior = prior
         self.get_obj_critic = self.get_obj_critic_raw
+        self.n_quantiles = n_quantiles
+        self.aleatoric_penalty = aleatoric_penalty
 
     @torch.no_grad()
-    def select_action(self, state) -> int:  # for discrete action space
+    def select_action(self, state, fti) -> int:  # for discrete action space
         states = torch.as_tensor((state,), dtype=torch.float32, device=self.device).detach_()
         net1, net2 = self.act(states)
         net1 = net1.view(self.action_dim, self.n_quantiles)
@@ -258,21 +262,23 @@ class AgentUADQN(AgentBase):
         epistemic_uncertainties = torch.mean((net1-net2)**2,dim=1)/2
         aleatoric_uncertainties = []
         for i in range(self.action_dim):
-            aleatoric_uncertainties.append(np.cov(net1[i].cpu().data.numpy(), net2[i].cpu().data.numpy())[0][1])
+            np.sqrt(aleatoric_uncertainties.append(np.cov(net1[i].cpu().data.numpy(), net2[i].cpu().data.numpy())[0][1]))
         aleatoric_uncertainties = torch.tensor(aleatoric_uncertainties, device=self.device)
         action_means = action_means - self.aleatoric_penalty * aleatoric_uncertainties
         samples = torch.distributions.multivariate_normal.MultivariateNormal(action_means,covariance_matrix=torch.diagflat(epistemic_uncertainties)).sample()
         action = samples.argmax().item()
+        if fti > self.turbulence_threshold:
+            action = 0
         return action
 
     def explore_env(self, env, buffer, target_step, reward_scale, gamma) -> int:
         for _ in range(target_step):
             action = self.select_action(self.state)
-            next_s, reward, done, _ = env.step(action)
+            next_s, reward, done, fti, _ = env.step(action)
 
             other = (reward * reward_scale, 0.0 if done else gamma, action)  # action is an int
             buffer.append_buffer(self.state, other)
-            self.state = env.reset() if done else next_s
+            self.state, self.fti = env.reset() if done else next_s
         return target_step
 
     def update_net(self, buffer, target_step, batch_size, repeat_times) -> (float, float):
@@ -334,7 +340,7 @@ class AgentUADQN(AgentBase):
         q_value = out_combined.gather(1, action.type(torch.long))
         return loss, q_value
     
-    def get_best_act(self, state):
+    def get_best_act(self, state, fti):
         net1,net2 = self.act(state)
         net1 = net1.view(self.action_dim,self.n_quantiles)
         net2 = net2.view(self.action_dim,self.n_quantiles)

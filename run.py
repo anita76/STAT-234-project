@@ -141,7 +141,7 @@ def train_and_evaluate(args):
                           eval_gap=eval_gap, eval_times1=eval_times1, eval_times2=eval_times2, )
 
     '''prepare for training'''
-    agent.state = env.reset()
+    agent.state, agent.fti = env.reset()
     if if_on_policy:
         steps = 0
     else:  # explore_before_training for off-policy
@@ -263,11 +263,11 @@ def get_episode_return(env, agent, device) -> (float, int):
     max_step = env.max_step
     if_discrete = env.if_discrete
 
-    state = env.reset()
+    state, fti = env.reset()
     for episode_step in range(max_step):
         s_tensor = torch.as_tensor((state,), device=device)
-        action = agent.get_best_act(s_tensor)
-        state, reward, done, _ = env.step(action)
+        action = agent.get_best_act(s_tensor, fti)
+        state, reward, done, fti, _ = env.step(action)
         episode_return += reward
         if done:
             break
@@ -328,19 +328,19 @@ def explore_before_training(env, buffer, target_step, reward_scale, gamma) -> in
     if_discrete = env.if_discrete
     action_dim = env.action_dim
 
-    state = env.reset()
+    state, fti = env.reset()
     steps = 0
 
     print('start exploring before training')
     while steps < target_step:
         action = rd.randint(action_dim) if if_discrete else rd.uniform(-1, 1, size=action_dim)
-        next_state, reward, done, _ = env.step(action)
+        next_state, reward, done, fti, _ = env.step(action)
         steps += 1
 
         scaled_reward = reward * reward_scale
         mask = 0.0 if done else gamma
-        other = (scaled_reward, mask, action) if if_discrete else (scaled_reward, mask, *action)
+        other = (scaled_reward, mask, fti, action) if if_discrete else (scaled_reward, mask, *action)
         buffer.append_buffer(state, other)
 
-        state = env.reset() if done else next_state
+        state, fti = env.reset() if done else next_state
     return steps
