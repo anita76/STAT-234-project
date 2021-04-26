@@ -82,10 +82,10 @@ class AgentBase:
         """
         for _ in range(target_step):
             action = self.select_action(self.state, self.fti)
-            next_s, reward, done, fti, _ = env.step(action)
-            other = (reward * reward_scale, 0.0 if done else gamma, *action)
+            next_s, reward, done, next_fti, _ = env.step(action)
+            other = (reward * reward_scale, 0.0 if done else gamma, self.fti, *action)
             buffer.append_buffer(self.state, other)
-            self.state, self.fti = env.reset() if done else next_s
+            self.state, self.fti = env.reset() if done else next_s, next_fti
         return target_step
 
     def update_net(self, buffer, target_step, batch_size, repeat_times) -> (float, float):
@@ -172,16 +172,17 @@ class AgentDQN(AgentBase):
             states = torch.as_tensor((state,), dtype=torch.float32, device=self.device).detach_()
             action = self.act(states)[0]
             a_int = action.argmax(dim=0).cpu().numpy()
-        
+        if fti > self.turbulence_threshold:
+            a_int = 0
 
         return a_int
 
     def explore_env(self, env, buffer, target_step, reward_scale, gamma) -> int:
         for _ in range(target_step):
-            action = self.select_action(self.state)
+            action = self.select_action(self.state, self.fti)
             next_s, reward, done, next_fti, _ = env.step(action)
 
-            other = (reward * reward_scale, 0.0 if done else gamma, fti, action)  # action is an int
+            other = (reward * reward_scale, 0.0 if done else gamma, self.fti, action)  # action is an int
             buffer.append_buffer(self.state, other)
             self.state, self.fti = env.reset() if done else next_s, next_fti
         return target_step
