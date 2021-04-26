@@ -258,8 +258,8 @@ class AgentUADQN(AgentBase):
         epistemic_uncertainties = torch.mean((net1-net2)**2,dim=1)/2
         aleatoric_uncertainties = []
         for i in range(self.action_dim):
-            aleatoric_uncertainties.append(np.cov(net1[i], net2[i])[0][1])
-        aleatoric_uncertainties = torch.tensor(aleatoric_uncertainties)
+            aleatoric_uncertainties.append(np.cov(net1[i].cpu().data.numpy(), net2[i].cpu().data.numpy())[0][1])
+        aleatoric_uncertainties = torch.tensor(aleatoric_uncertainties, device=self.device)
         action_means = action_means - self.aleatoric_penalty * aleatoric_uncertainties
         samples = torch.distributions.multivariate_normal.MultivariateNormal(action_means,covariance_matrix=torch.diagflat(epistemic_uncertainties)).sample()
         action = samples.argmax().item()
