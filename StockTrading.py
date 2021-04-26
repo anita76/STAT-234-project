@@ -352,7 +352,7 @@ def check_stock_trading_env():
     reward = None
     while not done:
         action = rd.rand(action_dim) * 2 - 1
-        next_state, reward, done, fti, _ = env.step(action)
+        next_state, reward, done, next_fti, _ = env.step(action)
         # print(';', len(next_state), env.day, reward)
         step += 1
 
