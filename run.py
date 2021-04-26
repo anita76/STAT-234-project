@@ -102,6 +102,7 @@ def train_and_evaluate(args):
     gpu_id = args.gpu_id  # necessary for Evaluator?
 
     '''training arguments'''
+    agent_specific_inputs = args.agent_specific_inputs
     net_dim = args.net_dim
     max_memo = args.max_memo
     break_step = args.break_step
@@ -131,7 +132,7 @@ def train_and_evaluate(args):
     if_discrete = env.if_discrete
 
     '''init: Agent, ReplayBuffer, Evaluator'''
-    agent.init(net_dim, state_dim, action_dim, if_per)
+    agent.init(net_dim, state_dim, action_dim, if_per, **agent_specific_inputs)
     if_on_policy = getattr(agent, 'if_on_policy', False)
 
 

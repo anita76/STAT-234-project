@@ -32,7 +32,7 @@ class StockTradingEnv:
         self.gamma_reward = 0.0
 
         # environment information
-        self.env_name = 'StockTradingEnv-v1-'+self.stock_name
+        self.env_name = 'StockTradingEnv-v1-'+stock_name
         self.state_dim = 3 + self.tech_ary.shape[1]
         self.action_dim = 3
         self.max_step = len(self.price_ary) - 1
@@ -247,6 +247,7 @@ class StockTradingEnv:
                     break
 
         import matplotlib.pyplot as plt
+        plt.figure()
         plt.plot(episode_returns)
         plt.grid()
         plt.title('cumulative return over time')
@@ -254,6 +255,7 @@ class StockTradingEnv:
         plt.ylabel('cumulative return as fraction of initial asset')
         plt.savefig(f'{cwd}/cumulative_return.jpg')
         np.save('%s/cumulative_return.npy' % cwd, episode_returns)
+        plt.close('all')
 
         plt.figure()
         plt.plot(self.price_ary)
@@ -263,6 +265,7 @@ class StockTradingEnv:
         plt.ylabel('price')
         plt.savefig(f'{cwd}/price_over_time.jpg')
         np.save('%s/price_over_time.npy' % cwd, self.price_ary)
+        plt.close('all')
 
         plt.figure()
         plt.plot(action_choice)
@@ -272,6 +275,7 @@ class StockTradingEnv:
         plt.ylabel('action')
         plt.savefig(f'{cwd}/action_over_time.jpg')
         np.save('%s/action_over_time.npy' % cwd, action_choice)
+        plt.close('all')
 
         return episode_returns
     
@@ -318,6 +322,7 @@ class StockTradingEnv:
                 break
 
         import matplotlib.pyplot as plt
+        plt.figure()
         plt.plot(episode_returns)
         plt.grid()
         plt.title('cumulative return over time')
@@ -325,6 +330,7 @@ class StockTradingEnv:
         plt.ylabel('cumulative return as fraction of initial asset')
         plt.savefig(f'{cwd}/cumulative_return_while_learning.jpg')
         np.save('%s/cumulative_return_while_learning.npy' % cwd, episode_returns)
+        plt.close('all')
 
         plt.figure()
         plt.plot(self.price_ary)
@@ -334,6 +340,7 @@ class StockTradingEnv:
         plt.ylabel('price')
         plt.savefig(f'{cwd}/price_over_time_while_learning.jpg')
         np.save('%s/price_over_time_while_learning.npy' % cwd, self.price_ary)
+        plt.close('all')
 
         plt.figure()
         plt.plot(action_choice)
@@ -343,6 +350,7 @@ class StockTradingEnv:
         plt.ylabel('action')
         plt.savefig(f'{cwd}/action_over_time_while_learning.jpg')
         np.save('%s/action_over_time_while_learning.npy' % cwd, action_choice)
+        plt.close('all')
 
 
 def check_stock_trading_env():
