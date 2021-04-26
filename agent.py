@@ -114,6 +114,7 @@ class AgentBase:
         """
         act_save_path = '{}/actor.pth'.format(cwd)
         cri_save_path = '{}/critic.pth'.format(cwd)
+        cri_target_save_path = '{}/critic_target.pth'.format(cwd)
 
         def load_torch_file(network, save_path):
             network_dict = torch.load(save_path, map_location=lambda storage, loc: storage)
@@ -124,6 +125,8 @@ class AgentBase:
                 torch.save(self.act.state_dict(), act_save_path)
             if self.cri is not None:
                 torch.save(self.cri.state_dict(), cri_save_path)
+            if self.cri_target is not None:
+                torch.save(self.cri_target.state_dict(), cri_target_save_path)
         elif (self.act is not None) and os.path.exists(act_save_path):
             load_torch_file(self.act, act_save_path)
             print("Loaded act:", cwd)

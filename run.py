@@ -17,6 +17,7 @@ class Arguments:
         self.env = env  # the environment for training
         self.env_eval = None  # the environment for evaluating
         self.gpu_id = gpu_id  # choose the GPU for running. gpu_id is None means set it automatically
+        self.agent_specific_inputs = {}
 
         '''Arguments for training (off-policy)'''
         self.net_dim = 2 ** 8  # the network width
@@ -84,8 +85,8 @@ class Arguments:
         os.environ['CUDA_VISIBLE_DEVICES'] = str(self.gpu_id)
         torch.set_num_threads(self.num_threads)
         torch.set_default_dtype(torch.float32)
-        torch.manual_seed(self.random_seed)
-        np.random.seed(self.random_seed)
+        #torch.manual_seed(self.random_seed)
+        #np.random.seed(self.random_seed)
 
 
 '''single process training'''
@@ -214,7 +215,9 @@ class Evaluator:
 
                 '''save actor.pth'''
                 act_save_path = f'{self.cwd}/actor.pth'
+                crit_target_save_path = f'{self.cwd}/critic_target.pth'
                 torch.save(agent.act.state_dict(), act_save_path)
+                torch.save(agent.cri_target.state_dict(), crit_target_save_path)
                 print(f"{self.agent_id:<2}  {self.total_step:8.2e}  {self.r_max:8.2f} |")  # save policy and print
 
             self.recorder.append((self.total_step, r_avg, r_std, obj_a, obj_c))  # update recorder
