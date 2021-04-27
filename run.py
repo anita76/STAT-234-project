@@ -132,6 +132,7 @@ def train_and_evaluate(args):
     if_discrete = env.if_discrete
 
     '''init: Agent, ReplayBuffer, Evaluator'''
+    print(agent_specific_inputs)
     agent.init(net_dim, state_dim, action_dim, if_per, **agent_specific_inputs)
     if_on_policy = getattr(agent, 'if_on_policy', False)
 

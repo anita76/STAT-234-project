@@ -51,14 +51,14 @@ def env_setup(ticker='TARA'):
     start_eval_date = '2016-01-01'
     end_eval_date = '2021-01-01'
 
-    env = StockTradingEnv('./', gamma, max_stock, initial_capital, buy_cost_pct, 
+    env = StockTradingEnv('./'+ticker+'/', gamma, max_stock, initial_capital, buy_cost_pct, 
                           sell_cost_pct, start_date, start_eval_date, 
                           end_eval_date, tickers, tech_indicator_list, 
-                          initial_stocks, if_eval=False, if_save=False)
-    env_eval = StockTradingEnv('./', gamma, max_stock, initial_capital, buy_cost_pct, 
+                          initial_stocks, if_eval=False, if_save=False, if_save=True)
+    env_eval = StockTradingEnv('./'+ticker+'/', gamma, max_stock, initial_capital, buy_cost_pct, 
                               sell_cost_pct, start_date, start_eval_date, 
                               end_eval_date, tickers, tech_indicator_list, 
-                              initial_stocks, if_eval=True, if_save=False)
+                              initial_stocks, if_eval=True, if_save=False, if_save=True)
     return env, env_eval
 
 def UADQN_setup(env, env_eval):

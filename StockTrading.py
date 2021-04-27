@@ -12,6 +12,8 @@ class StockTradingEnv:
                  start_date='2008-03-19', end_date='2016-01-01', env_eval_date='2021-01-01',
                  stock_name='AAPL', tech_indicator_list=None, initial_stocks=0, if_eval=False, if_save=False):
 
+        if not os.path.exists(cwd):
+            os.makedirs(cwd)
         self.price_ary, self.tech_ary, self.turbulence_ary = self.load_data(cwd, if_eval, if_save, stock_name, tech_indicator_list,
                                                                             start_date, end_date, env_eval_date)
 
@@ -39,6 +41,7 @@ class StockTradingEnv:
         self.if_discrete = True
         self.target_return = 3.5
         self.episode_return = 0.0
+
 
     def reset(self):
         self.day = 0
