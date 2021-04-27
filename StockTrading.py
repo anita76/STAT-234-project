@@ -34,7 +34,7 @@ class StockTradingEnv:
         self.gamma_reward = 0.0
 
         # environment information
-        self.env_name = 'StockTradingEnv-v1-'+stock_name
+        self.env_name = 'StockTradingEnv-v2-'+stock_name
         self.state_dim = 3 + self.tech_ary.shape[1]
         self.action_dim = 3
         self.max_step = len(self.price_ary) - 1
@@ -225,8 +225,9 @@ class StockTradingEnv:
         agent = args.agent
         net_dim = args.net_dim
         cwd = args.cwd
+        agent_specific_inputs = args.agent_specific_inputs
 
-        agent.init(net_dim, state_dim, action_dim)
+        agent.init(net_dim, state_dim, action_dim, **agent_specific_inputs)
         agent.save_load_model(cwd=cwd, if_save=False)
         act = agent.act
         device = agent.device
@@ -290,8 +291,10 @@ class StockTradingEnv:
         agent = args.agent
         net_dim = args.net_dim
         cwd = args.cwd
+        
+        agent_specific_inputs = args.agent_specific_inputs
 
-        agent.init(net_dim, state_dim, action_dim)
+        agent.init(net_dim, state_dim, action_dim, **agent_specific_inputs)
         agent.save_load_model(cwd=cwd, if_save=False)
         act = agent.act
         device = agent.device

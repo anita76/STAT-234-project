@@ -3,6 +3,7 @@ from agent import AgentDQN, AgentUADQN
 from StockTrading import StockTradingEnv, check_stock_trading_env
 import yfinance as yf
 from stockstats import StockDataFrame as Sdf
+import time
 
 def setup_args(agent, agent_inputs, env, env_eval):
     # Agent
@@ -19,12 +20,12 @@ def setup_args(agent, agent_inputs, env, env_eval):
 
     # Hyperparameters
     args.gamma = args.env.gamma
-    args.break_step = 200
+    args.break_step = 10000
     args.net_dim = 2 ** 9
     args.max_step = args.env.max_step
     args.max_memo = args.max_step * 4
-    args.batch_size = 32
-    args.repeat_times = 2 # repeat_times * target_step == number of times we update before training
+    args.batch_size = 128
+    args.repeat_times = 4 # repeat_times * target_step == number of times we update before training
     args.eval_gap = 2 ** 4
     args.eval_times1 = 2 ** 3
     args.eval_times2 = 2 ** 5
@@ -54,16 +55,16 @@ def env_setup(ticker='TARA'):
     env = StockTradingEnv('./'+ticker+'/', gamma, max_stock, initial_capital, buy_cost_pct, 
                           sell_cost_pct, start_date, start_eval_date, 
                           end_eval_date, tickers, tech_indicator_list, 
-                          initial_stocks, if_eval=False, if_save=False, if_save=True)
+                          initial_stocks, if_eval=False, if_save=True)
     env_eval = StockTradingEnv('./'+ticker+'/', gamma, max_stock, initial_capital, buy_cost_pct, 
                               sell_cost_pct, start_date, start_eval_date, 
                               end_eval_date, tickers, tech_indicator_list, 
-                              initial_stocks, if_eval=True, if_save=False, if_save=True)
+                              initial_stocks, if_eval=True, if_save=True)
     return env, env_eval
 
 def UADQN_setup(env, env_eval):
     agent = AgentUADQN()
-    agent_inputs = {"kappa": 1, "prior":0.01, "aleatoric_penalty":0.5, "n_quantiles":200}
+    agent_inputs = {"aleatoric_penalty":1, "n_quantiles":200}
     return setup_args(agent, agent_inputs, env, env_eval)
 
 def DQN_setup(env, env_eval):
@@ -102,10 +103,12 @@ def baseline_model(env, _torch):
 
 
 if __name__ == '__main__':
-    tickers = ['TARA', 'AAPL']
+    tickers = ['AMD', 'BB', 'MKTY', 'DORM', 'RRD', 'ARLP', 'ATLC', 'DLPN']
     for stock_ticker in tickers:
-        print('------- Begin Experiment for {} --------\n'.format(stock_ticker))
+        print('------------------ Begin Experiment for {} ------------------\n'.format(stock_ticker))
+        start = time.time()
         env, env_eval = env_setup(stock_ticker)
+        """
         print('-'*50)
         print('RUNNING BASELINE MODEL')
         baseline_model(env_eval, torch)
@@ -117,7 +120,7 @@ if __name__ == '__main__':
         print('DQN MODEL RETURN: {}\n'.format(returns[-1]))
         returns = args.env_eval.draw_cumulative_return_while_learning(args, torch)
         print('DQN MODEL RETURN WHILE LEARNING: {}\n'.format(returns[-1]))
-        print('-'*50)
+        print('-'*50)"""
         print('RUNNING UADQN MODEL')
         args = UADQN_setup(env, env_eval)
         train_and_evaluate(args)
@@ -125,5 +128,7 @@ if __name__ == '__main__':
         print('UADQN MODEL RETURN: {}\n'.format(returns[-1]))
         returns = args.env_eval.draw_cumulative_return_while_learning(args, torch)
         print('UADQN MODEL RETURN WHILE LEARNING: {}\n'.format(returns[-1]))
+        end = time.time()
+        print('TOTAL TIME (min): {}'.format((end-start)/60.0))
         print('-'*50)
     
