@@ -311,8 +311,7 @@ class StockTradingEnv:
             state = new_state
             fti = new_fti
 
-            if i%50 == 49: 
-                print('updating network: {}'.format(i))
+            if i%50 == 49:
                 agent.update_net(buffer, 50, 32, 1)
 
             total_asset = self.amount + self.price_ary[self.day] * self.stocks
@@ -353,6 +352,8 @@ class StockTradingEnv:
         plt.savefig(f'{cwd}/action_over_time_while_learning.jpg')
         np.save('%s/action_over_time_while_learning.npy' % cwd, action_choice)
         plt.close('all')
+        
+        return episode_returns
 
 
 def check_stock_trading_env():

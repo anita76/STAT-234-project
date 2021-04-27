@@ -102,7 +102,7 @@ def baseline_model(env, _torch):
 
 
 if __name__ == '__main__':
-    tickers = ['TARA']
+    tickers = ['TARA', 'AAPL']
     for stock_ticker in tickers:
         print('------- Begin Experiment for {} --------\n'.format(stock_ticker))
         env, env_eval = env_setup(stock_ticker)
