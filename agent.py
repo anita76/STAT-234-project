@@ -156,8 +156,9 @@ class AgentDQN(AgentBase):
         self.explore_rate = 0.1  # the probability of choosing action randomly in epsilon-greedy
         self.action_dim = None  # chose discrete action randomly in epsilon-greedy
 
-    def init(self, net_dim, state_dim, action_dim, if_per=False, turbulence_threshold=300):
+    def init(self, net_dim, state_dim, action_dim, if_per=False, turbulence_threshold=300, explore_rate=0.1):
         self.action_dim = action_dim
+        self.explore_rate = explore_rate
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         self.cri = QNet(net_dim, state_dim, action_dim).to(self.device)

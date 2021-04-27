@@ -49,7 +49,7 @@ class StockTradingEnv:
             self.stocks = self.initial_stocks
             self.amount = self.initial_capital
         else:
-            self.stocks = self.initial_stocks + rd.randint(0, 64)
+            self.stocks = self.initial_stocks * rd.uniform(0.9, 1.1)
             self.amount = self.initial_capital * rd.uniform(0.95, 1.05) - self.stocks * price
 
         self.total_asset = self.amount + self.stocks * price
@@ -79,7 +79,7 @@ class StockTradingEnv:
             self.amount += price * (1 - self.sell_cost_pct)
         elif action == 2:
             self.stocks += 1
-            self.amount -= price * (1 - self.buy_cost_pct)
+            self.amount -= price * (1 + self.buy_cost_pct)
 
         state = np.hstack((self.amount * 2 ** -13,
                            price,
@@ -265,6 +265,7 @@ class StockTradingEnv:
         plt.ylabel('price')
         plt.savefig(f'{cwd}/price_over_time.jpg')
         np.save('%s/price_over_time.npy' % cwd, self.price_ary)
+        np.save('%s/turbulence_over_time.npy' % cwd, self.turbulence_ary)
         plt.close('all')
 
         plt.figure()
@@ -340,6 +341,7 @@ class StockTradingEnv:
         plt.ylabel('price')
         plt.savefig(f'{cwd}/price_over_time_while_learning.jpg')
         np.save('%s/price_over_time_while_learning.npy' % cwd, self.price_ary)
+        np.save('%s/turbulence_over_time.npy' % cwd, self.turbulence_ary)
         plt.close('all')
 
         plt.figure()
