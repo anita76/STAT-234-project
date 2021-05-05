@@ -240,6 +240,8 @@ class AgentUADQN(AgentBase):
     def __init__(self):
         super().__init__()
         self.action_dim = None  # chose discrete action randomly in epsilon-greedy
+        self.aleatoric_uncertainties = []
+        self.epistemic_uncertainties = []
 
     def init(self, net_dim, state_dim, action_dim, kappa=1, prior=0.01, aleatoric_penalty=0.5, n_quantiles=20):
         self.action_dim = action_dim
@@ -403,6 +405,8 @@ class AgentUADQNTotal(AgentBase):
             for i in range(self.action_dim):
                 aleatoric_uncertainties.append(np.sqrt(np.cov(net1[i].cpu().data.numpy(), net2[i].cpu().data.numpy())[0][1]))
             aleatoric_uncertainties = torch.tensor(aleatoric_uncertainties, device=self.device)
+            self.aleatoric_uncertainties.append(aleatoric_uncertainties.view(1, -1))
+            self.epistemic_uncertainties.append(torch.sqrt(epistemic_uncertainties.view(1, -1)))
             overall_uncertainties = aleatoric_uncertainties + torch.sqrt(epistemic_uncertainties)
             action_means = action_means - self.aleatoric_penalty * overall_uncertainties
             action = action_means.argmax().item()
