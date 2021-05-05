@@ -64,7 +64,7 @@ def env_setup(ticker='TARA'):
 
 def UADQN_setup(env, env_eval):
     agent = AgentUADQN()
-    agent_inputs = {"aleatoric_penalty":1, "n_quantiles":200}
+    agent_inputs = {"aleatoric_penalty":2, "n_quantiles":200}
     return setup_args(agent, agent_inputs, env, env_eval)
 
 def UADQN_total_setup(env, env_eval):
