@@ -7,7 +7,7 @@ import numpy.random as rd
 from copy import deepcopy
 from replay import ReplayBuffer
 
-"""[ElegantRL](https://github.com/AI4Finance-LLC/ElegantRL)"""
+"""Adapted from [ElegantRL](https://github.com/AI4Finance-LLC/ElegantRL)"""
 
 
 class Arguments:

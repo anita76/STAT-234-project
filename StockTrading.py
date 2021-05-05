@@ -6,6 +6,8 @@ import torch
 
 from replay import ReplayBuffer
 
+"""Adapted from: [ElegantRL](https://github.com/AI4Finance-LLC/ElegantRL)"""
+
 class StockTradingEnv:
     def __init__(self, cwd='./', gamma=0.99, max_stock=1.0,
                  initial_capital=1e6, buy_cost_pct=1e-3, sell_cost_pct=1e-3,

@@ -67,6 +67,11 @@ def UADQN_setup(env, env_eval):
     agent_inputs = {"aleatoric_penalty":1, "n_quantiles":200}
     return setup_args(agent, agent_inputs, env, env_eval)
 
+def UADQN_total_setup(env, env_eval):
+    agent = AgentUADQNTotal()
+    agent_inputs = {"aleatoric_penalty":1, "n_quantiles":200, "explore_rate":0.1}
+    return setup_args(agent, agent_inputs, env, env_eval)
+
 def DQN_setup(env, env_eval):
     agent = AgentDQN()
     agent_inputs = {"explore_rate": 0.1, "turbulence_threshold":300}
@@ -120,7 +125,7 @@ if __name__ == '__main__':
         print('DQN MODEL RETURN: {}\n'.format(returns[-1]))
         returns = args.env_eval.draw_cumulative_return_while_learning(args, torch)
         print('DQN MODEL RETURN WHILE LEARNING: {}\n'.format(returns[-1]))
-        print('-'*50)"""
+        print('-'*50)
         print('RUNNING UADQN MODEL')
         args = UADQN_setup(env, env_eval)
         train_and_evaluate(args)
@@ -128,6 +133,16 @@ if __name__ == '__main__':
         print('UADQN MODEL RETURN: {}\n'.format(returns[-1]))
         returns = args.env_eval.draw_cumulative_return_while_learning(args, torch)
         print('UADQN MODEL RETURN WHILE LEARNING: {}\n'.format(returns[-1]))
+        end = time.time()
+        print('TOTAL TIME (min): {}'.format((end-start)/60.0))"""
+        print('-'*50)
+        print('RUNNING UADQN TOTAL MODEL')
+        args = UADQN_total_setup(env, env_eval)
+        train_and_evaluate(args)
+        returns = args.env_eval.draw_cumulative_return(args, torch)
+        print('UADQN TOTAL MODEL RETURN: {}\n'.format(returns[-1]))
+        returns = args.env_eval.draw_cumulative_return_while_learning(args, torch)
+        print('UADQN TOTAL MODEL RETURN WHILE LEARNING: {}\n'.format(returns[-1]))
         end = time.time()
         print('TOTAL TIME (min): {}'.format((end-start)/60.0))
         print('-'*50)
