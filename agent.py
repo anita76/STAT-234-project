@@ -240,8 +240,6 @@ class AgentUADQN(AgentBase):
     def __init__(self):
         super().__init__()
         self.action_dim = None  # chose discrete action randomly in epsilon-greedy
-        self.aleatoric_uncertainties = []
-        self.epistemic_uncertainties = []
 
     def init(self, net_dim, state_dim, action_dim, kappa=1, prior=0.01, aleatoric_penalty=0.5, n_quantiles=20):
         self.action_dim = action_dim
@@ -368,6 +366,8 @@ class AgentUADQNTotal(AgentBase):
     def __init__(self):
         super().__init__()
         self.action_dim = None  # chose discrete action randomly in epsilon-greedy
+        self.aleatoric_uncertainties = []
+        self.epistemic_uncertainties = []
 
     def init(self, net_dim, state_dim, action_dim, kappa=1, prior=0.01, aleatoric_penalty=0.5, n_quantiles=20, explore_rate=0.1):
         self.action_dim = action_dim

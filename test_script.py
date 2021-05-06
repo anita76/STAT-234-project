@@ -1,9 +1,10 @@
 from run import *
-from agent import AgentDQN, AgentUADQN
+from agent import AgentDQN, AgentUADQN, AgentUADQNTotal
 from StockTrading import StockTradingEnv, check_stock_trading_env
 import yfinance as yf
 from stockstats import StockDataFrame as Sdf
 import time
+import torch
 
 def setup_args(agent, agent_inputs, env, env_eval):
     # Agent
@@ -69,7 +70,7 @@ def UADQN_setup(env, env_eval):
 
 def UADQN_total_setup(env, env_eval):
     agent = AgentUADQNTotal()
-    agent_inputs = {"aleatoric_penalty":1, "n_quantiles":200, "explore_rate":0.1}
+    agent_inputs = {"aleatoric_penalty":0.5, "n_quantiles":200, "explore_rate":0.1}
     return setup_args(agent, agent_inputs, env, env_eval)
 
 def DQN_setup(env, env_eval):
@@ -139,6 +140,8 @@ if __name__ == '__main__':
         print('RUNNING UADQN TOTAL MODEL')
         args = UADQN_total_setup(env, env_eval)
         train_and_evaluate(args)
+        torch.save(args.agent.aleatoric_uncertainties, stock_ticker + '_aleatoric.pt')
+        torch.save(args.agent.epistemic_uncertainties, stock_ticker + '_epistemic.pt')
         returns = args.env_eval.draw_cumulative_return(args, torch)
         print('UADQN TOTAL MODEL RETURN: {}\n'.format(returns[-1]))
         returns = args.env_eval.draw_cumulative_return_while_learning(args, torch)
