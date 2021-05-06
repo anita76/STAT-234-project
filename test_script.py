@@ -70,7 +70,7 @@ def UADQN_setup(env, env_eval):
 
 def UADQN_total_setup(env, env_eval):
     agent = AgentUADQNTotal()
-    agent_inputs = {"aleatoric_penalty":0.5, "n_quantiles":200, "explore_rate":0.1}
+    agent_inputs = {"aleatoric_penalty":2, "n_quantiles":200, "explore_rate":0.1}
     return setup_args(agent, agent_inputs, env, env_eval)
 
 def DQN_setup(env, env_eval):
@@ -114,7 +114,6 @@ if __name__ == '__main__':
         print('------------------ Begin Experiment for {} ------------------\n'.format(stock_ticker))
         start = time.time()
         env, env_eval = env_setup(stock_ticker)
-        """
         print('-'*50)
         print('RUNNING BASELINE MODEL')
         baseline_model(env_eval, torch)
@@ -135,7 +134,7 @@ if __name__ == '__main__':
         returns = args.env_eval.draw_cumulative_return_while_learning(args, torch)
         print('UADQN MODEL RETURN WHILE LEARNING: {}\n'.format(returns[-1]))
         end = time.time()
-        print('TOTAL TIME (min): {}'.format((end-start)/60.0))"""
+        print('TOTAL TIME (min): {}'.format((end-start)/60.0))
         print('-'*50)
         print('RUNNING UADQN TOTAL MODEL')
         args = UADQN_total_setup(env, env_eval)
